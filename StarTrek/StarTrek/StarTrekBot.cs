@@ -20,9 +20,7 @@ namespace StarTrek
     /// <summary>
     /// Represents a bot that processes incoming activities.
     /// For each user interaction, an instance of this class is created and the OnTurnAsync method is called.
-    /// This is a Transient lifetime service. Transient lifetime services are created
-    /// each time they're requested. Objects that are expensive to construct, or have a lifetime
-    /// beyond a single turn, should be carefully managed.
+    /// This is a Transient lifetime service. 
     /// For example, the <see cref="MemoryStorage"/> object and associated
     /// <see cref="IStatePropertyAccessor{T}"/> object are created with a singleton lifetime.
     /// </summary>
@@ -62,7 +60,7 @@ namespace StarTrek
             _dialogs.Add(new WaterfallDialog("commandSelector", new WaterfallStep[] { ChoiceCommandStepAsync, ShowCommandStepAsync }));
             _dialogs.Add(new ChoicePrompt("commandPrompt"));
             _dialogs.Add(new TextPrompt("text"));
-
+     
             var movement_slots = new List<SlotDetails>
             {
 
@@ -109,7 +107,7 @@ namespace StarTrek
         }
 
         /// <summary>
-        /// Creates options for a <see cref="ChoicePrompt"/> so the user may select an option.
+        /// Creates options for a <see cref="ChoicePrompt"/> so user select the command.
         /// </summary>
         /// <param name="activity">The message activity the bot received.</param>
         /// <returns>A <see cref="PromptOptions"/> to be used in a prompt.</returns>
@@ -264,17 +262,29 @@ namespace StarTrek
             // So we need to create a list of attachments on the activity.
 
             reply.Attachments = new List<Attachment>();
-            // Decide which type of card(s) we are going to show the user
+
             if (text.StartsWith("2") || text.StartsWith("SR"))
             {
                 // Display a Short Range Card
 
                 reply.Attachments.Add(GetShortRangeCard(state).ToAttachment());
 
+                await step.Context.SendActivityAsync(reply, cancellationToken);
+
+            }
+
+            if (text.StartsWith("3") || text.StartsWith("LR"))
+            {
+                // Display a Short Range Card
+
+                reply.Attachments.Add(GetLongRangeCard(state).ToAttachment());
+
+                await step.Context.SendActivityAsync(reply, cancellationToken);
+
             }
 
             // Send the card(s) to the user as an attachment to the activity
-            await step.Context.SendActivityAsync(reply, cancellationToken);
+
 
             // Give the user instructions about what to do next
 
@@ -344,7 +354,7 @@ namespace StarTrek
         /// <summary>
         /// Creates a <see cref="HeroCard"/>.
         /// </summary>
-        /// <returns>A <see cref="HeroCard"/> for .</returns>
+        /// <returns>A <see cref="HeroCard"/> for Short Rabge Sensors</returns>
         /// <remarks>Related types <see cref="CardImage"/>, <see cref="CardAction"/>,
         /// and <see cref="ActionTypes"/>.</remarks>
         private HeroCard GetShortRangeCard(GameState gameState)
@@ -440,6 +450,85 @@ namespace StarTrek
                     }
 
                 }
+
+                drawables.Draw(image);
+
+                url = @"data:image/png;base64," + image.ToBase64();
+
+            }
+
+            var heroCard = new HeroCard
+            {
+                Title = $"Quadrant: {Enterprise.QX},{Enterprise.QY} Sector: {Enterprise.SX},{Enterprise.SY}",
+                Images = new List<CardImage> { new CardImage(url) },
+                Buttons = new List<CardAction> { },
+            };
+
+            return heroCard;
+
+        }
+
+        /// <summary>
+        /// Creates a <see cref="HeroCard"/>.
+        /// </summary>
+        /// <returns>A <see cref="HeroCard"/> for Long Range Sensors</returns>
+        /// <remarks>Related types <see cref="CardImage"/>, <see cref="CardAction"/>,
+        /// and <see cref="ActionTypes"/>.</remarks>
+        private HeroCard GetLongRangeCard(GameState gameState)
+        {
+            string url = "";
+
+            StarMap StarMap = (StarMap)StringToObject(gameState.StarMap);
+
+            var Enterprise = StarMap.Enterprise;
+
+            Console.WriteLine($"Enterprise: {Enterprise.QX} : {Enterprise.QY} : {Enterprise.SX} : {Enterprise.SY}");
+
+            var Quadrants = StarMap.Quadrants;
+            var Quadrant = StarMap.Quadrants[Enterprise.QX, Enterprise.QY];
+
+            using (MagickImage image = new MagickImage(new MagickColor("#000000"), 512, 256))
+            {
+                image.Format = MagickFormat.Png;
+
+                Drawables drawables = new Drawables()
+                  // Draw text on the image
+                  .FontPointSize(18)
+                  .Font("Courier New")
+                  .Rectangle(5, 5, 390, 210)
+                  .StrokeColor(MagickColors.Green)
+                  .FillColor(MagickColors.Black)
+                  .TextAlignment(TextAlignment.Left);
+
+                for (var qX = 0; qX < 8; qX++)
+                {
+                    for (var qY = 0; qY < 8; qY++)
+                    {
+                        var summary = StarMap.GetQuadrantSummary(qX, qY);
+
+                        if (Enterprise.QX == qX && Enterprise.QY == qY)
+                        {
+                            summary += "*";
+                        }
+
+                        drawables = drawables.Text(qX * 48 + 12, qY * 24 + 28, summary);
+
+                    }
+
+                }
+
+                drawables = drawables.Text(10, 240, "* - Current Position");
+                drawables = drawables.Text(396, 18, "Condition:");
+
+                if (StarMap.CheckQuadrant(Piece.Pieces.klingon, Enterprise.QX, Enterprise.QY) > 0)
+                { 
+                    drawables = drawables.Text(396, 42, "Red");
+                }
+                else
+                {
+                    drawables = drawables.Text(396, 42, "Green");
+                }
+
                 drawables.Draw(image);
 
                 url = @"data:image/png;base64," + image.ToBase64();

@@ -210,7 +210,7 @@ namespace StarTrek
                 var sY = rnd.Next(0, 8);
 
                 if ((_quadrants[qX, qY].Sector[sX, sY].Type == Piece.Pieces.empty) &&
-                    (CheckQuadrant(type, qX, qY) <= 9))
+                    (CheckQuadrant(type, qX, qY) < 9))
                 { 
  
                     Piece piece = new Piece(type, qX, qY, sX, sY);
@@ -225,7 +225,7 @@ namespace StarTrek
         {
 
             _quadrants[piece.QX, piece.QY].Sector[piece.SX, piece.SY] = piece;
-            Console.WriteLine($"PUT: {piece.Type} - {piece.QX}:{piece.QY} {piece.SX}:{piece.SY}");
+
             return piece;
 
         }
