@@ -81,11 +81,28 @@ namespace StarTrek
                 new SlotDetails("SectorY", "text", "Please enter  Sector - Y."),
             };
 
+            var photon_spread_slots = new List<SlotDetails>
+            {
+                new SlotDetails("Spread", "text", "How many missiles to fire."),
+            };
+
+            var photon_angle_slots = new List<SlotDetails>
+            {
+                new SlotDetails("Angle", "text", "0.00 - 7.00."),
+            };
+
+            var shield_energy_slots = new List<SlotDetails>
+            {
+                new SlotDetails("Energy", "text", "1 - 2000."),
+            };
+
             _dialogs.Add(new SlotFillingDialog("quadrantCoordinates", quadrant_movement_slots));
             _dialogs.Add(new SlotFillingDialog("sectorCoordinates", sector_movement_slots));
 
             _dialogs.Add(new SlotFillingDialog("movement", movement_slots));
             _dialogs.Add(new WaterfallDialog("coordinates", new WaterfallStep[] { CoordinateDialogAsync, ProcessCoordinateResultsAsync }));
+
+            _dialogs.Add(new SlotFillingDialog("shields", shield_energy_slots));
 
         }
 
